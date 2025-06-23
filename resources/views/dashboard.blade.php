@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-[#0a192f] via-[#1e2a44] to-[#283d63] text-white py-8 px-4">
+<div class="min-h-screen p-6min-h-screen bg-gradient-to-br from-[#0a192f] via-[#1e2a44] to-[#283d63] text-white py-8 px-4">
     <div class="max-w-6xl mx-auto">
 
         {{-- Header --}}
@@ -46,9 +46,6 @@
                        class="block bg-[#112240] shadow-md rounded-xl p-5 border border-blue-600 hover:shadow-xl transition duration-200">
                         <div class="flex items-center justify-between mb-3">
                             <div class="text-sm text-gray-100">ID: {{ $device->id }}</div>
-                            {{-- <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded">
-                                {{ $device->created_at }}
-                            </span> --}}
                         </div>
                         <div class="text-lg font-semibold text-gray-200 mb-1 text-center">{{ $device->name }}</div>
                         <div class="text-gray-400 text-sm mb-2 text-center">

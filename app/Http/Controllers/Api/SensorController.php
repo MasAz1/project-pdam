@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\SensorLog;
 use App\Models\Device;
-// Pastikan SensorSession hanya jika kamu punya model-nya, kalau tidak ada, hapus baris ini
-// use App\Models\SensorSession;
 
 class SensorController extends Controller
 {
@@ -16,10 +14,9 @@ class SensorController extends Controller
     {
         $request->validate([
             'device_id'    => 'required|exists:devices,id',
-            'debit'        => 'required|numeric',
+            'debitair'     => 'required|numeric',
             'tekanan'      => 'nullable|numeric',
-            'kekeruhan'    => 'nullable|numeric',
-            'ph'           => 'nullable|numeric',
+            'kelembaban'   => 'nullable|numeric',  
             'suhu'         => 'nullable|numeric',
             'baterai'      => 'nullable|numeric',
             'sensor_name'  => 'nullable|string',
@@ -27,10 +24,9 @@ class SensorController extends Controller
 
         $data = SensorLog::create([
             'device_id'   => $request->device_id,
-            'debit'       => $request->debit,
+            'debitair'    => $request->debitair,
             'tekanan'     => $request->tekanan,
-            'kekeruhan'   => $request->kekeruhan,
-            'ph'          => $request->ph,
+            'kelembaban'  => $request->kelembaban, 
             'suhu'        => $request->suhu,
             'baterai'     => $request->baterai,
             'sensor_name' => $request->sensor_name,

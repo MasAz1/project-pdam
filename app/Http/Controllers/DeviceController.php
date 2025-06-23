@@ -83,10 +83,9 @@ class DeviceController extends Controller
             'chartData' => [
                 'timestamps' => $logs->pluck('recorded_at')->map(fn($d) => Carbon::parse($d)->format('H:i')),
                 'debit'      => $logs->pluck('debit'),
-                'kekeruhan'  => $logs->pluck('kekeruhan'),
-                'ph'         => $logs->pluck('ph'),
                 'suhu'       => $logs->pluck('suhu'),
                 'baterai'    => $logs->pluck('baterai'),
+                'kelembaban' => $logs->pluck('kelembaban'),
             ],
 
             // Info tambahan
@@ -100,9 +99,9 @@ class DeviceController extends Controller
 
             'debit_air'   => $latestLog->debit ?? 0,
             'tekanan'     => $latestLog->tekanan ?? 0,
-            'kelembaban'  => $latestLog->kelembaban ?? 0,
             'suhu'        => $latestLog->suhu ?? 0,
             'baterai'     => $latestLog->baterai ?? 0,
+            'kelembaban'  => $latestLog->kelembaban ?? 0,
 
             'sdcard_connected' => $device->sdcard_status === 'connected',
         ]);
@@ -122,8 +121,14 @@ class DeviceController extends Controller
 
         return $pdf->download('sensor-' . $device->name . '.pdf');
     }
+    public function errorLogs(Device $device)
+    {
+        $logs = $device->errorLogs()->latest()->paginate(10); // Sesuaikan relasi dengan model kamu
+        return view('devices.error_logs', compact('device', 'logs'));
+    }
 
-    // ✅ Tambahan: Endpoint untuk AJAX memuat status SD Card real-time
+
+    // ✅ Endpoint status SD card untuk AJAX
     public function sdcardStatus($id)
     {
         $device = Device::findOrFail($id);
@@ -133,5 +138,15 @@ class DeviceController extends Controller
         $sdcard_total = $device->sdcard_total ?? 0;
 
         return view('partials.sdcard_status', compact('sdcard_connected', 'sdcard_used', 'sdcard_total'));
+    }
+
+    // ✅ Endpoint ambil voltase terbaru untuk JS
+    public function getVoltase($id)
+    {
+        $voltase = SensorLog::where('device_id', $id)
+            ->latest('recorded_at')
+            ->value('voltase');
+
+        return response()->json(['voltase' => $voltase ?? 0]);
     }
 }

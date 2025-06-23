@@ -12,6 +12,9 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/device/{id}/sdcard-status', [DeviceController::class, 'sdcardStatus'])
 	->name('device.sdcard.status');
+Route::get('/devices/{device}/error-logs', [DeviceController::class, 'errorLogs'])->name('devices.errorLogs');
+
+
 
 Route::get('/', function () {
 	return Auth::check()
@@ -28,4 +31,5 @@ Route::middleware(['auth'])->group(function () {
 	Route::delete('/devices/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
 	Route::get('/devices/{device}', [DeviceController::class, 'show'])->name('devices.show');
 	Route::get('/devices/{device}/download-pdf', [DeviceController::class, 'downloadPdf'])->name('devices.downloadPdf');
+	Route::get('/device/{id}/voltase', [DeviceController::class, 'getVoltase'])->name('device.voltase');
 });

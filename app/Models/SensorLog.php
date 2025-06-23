@@ -12,10 +12,9 @@ class SensorLog extends Model
 
     protected $fillable = [
         'device_id',
-        'debit',
+        'debitair',
         'tekanan',
-        'kekeruhan',
-        'ph',
+        'kelembaban',
         'suhu',
         'baterai',
         'sensor_name',

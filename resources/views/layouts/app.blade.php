@@ -19,9 +19,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <div class="min-h-screen p-6">
-        @yield('content')
-    </div>
+    @yield('content')
 
     {{-- SweetAlert2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
