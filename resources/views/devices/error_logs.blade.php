@@ -1,20 +1,18 @@
 @extends('layouts.app')
 
 @section('content')
-	<div class="min-h-screen w-full px-6 py-10 text-white">
+	<div class="min-h-screen w-full px-6 py-10 text-white bg-[#0a192f]">
 		<div class="max-w-6xl mx-auto">
 
 			<!-- Tombol Kembali -->
-			<div class="mb-10">
-				<a href="{{ route('devices.show', $device->id) }}"
-					class="inline-flex items-center text-base font-semibold text-blue-300 hover:text-white transition">
-					<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-						xmlns="http://www.w3.org/2000/svg">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-					</svg>
-					Kembali ke Device
-				</a>
-			</div>
+			<a href="{{ route('dashboard') }}"
+				class="mt-5 mb-10 block text-blue-300 hover:text-white text-base font-semibold inline-flex items-center transition">
+				<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+					xmlns="http://www.w3.org/2000/svg">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+				</svg>
+				Kembali ke Dashboard
+			</a>
 
 			<!-- Header -->
 			<div class="mb-6">
