@@ -34,6 +34,13 @@
                 </div>
 
                 <div>
+                    <label for="id" class="block font-semibold mb-1">Project</label>
+                    <input type="number" name="project" id="project" value="{{ old('project') }}"
+                        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required>
+                </div>
+
+                <div>
                     <label for="name" class="block font-semibold mb-1">Nama Device</label>
                     <input type="text" name="name" id="name" value="{{ old('name') }}"
                         class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"

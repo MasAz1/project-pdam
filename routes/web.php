@@ -30,6 +30,10 @@ Route::middleware(['auth'])->group(function () {
 	Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
 	Route::delete('/devices/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
 	Route::get('/devices/{device}', [DeviceController::class, 'show'])->name('devices.show');
-	Route::get('/devices/{device}/download-pdf', [DeviceController::class, 'downloadPdf'])->name('devices.downloadPdf');
-	Route::get('/device/{id}/voltase', [DeviceController::class, 'getVoltase'])->name('device.voltase');
+	Route::get('/devices/{device}/export/pdf', [DeviceController::class, 'exportPdf'])->name('devices.export.pdf');
+	// routes/web.php
+	Route::get('/devices/{id}', [DeviceController::class, 'show'])->name('devices.show');
+	// routes/web.php
+	Route::get('/devices/{device}/chart-data', [DeviceController::class, 'chartData']);
+	Route::patch('/devices/{device}/update-location', [DeviceController::class, 'updateLocation'])->name('devices.update.location');
 });

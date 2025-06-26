@@ -14,13 +14,14 @@ class CreateSensorLogsTable extends Migration
         Schema::create('sensor_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('device_id');
-            $table->string('sensor_name')->nullable(); // Optional: kalau tidak selalu ada
-            $table->float('debitair')->nullable();
-            $table->float('tekanan')->nullable();
-            $table->float('kelembaban')->nullable();
+            $table->integer('device_project');
+            $table->string('device_name');
+            $table->float('value1')->nullable();
+            $table->float('value2')->nullable();
+            $table->float('kelembapan')->nullable();
             $table->float('suhu')->nullable();
             $table->float('baterai')->nullable();
-            $table->timestamp('recorded_at')->nullable();
+            $table->string('recorded_at')->nullable();
             $table->timestamps();
 
             // Foreign Key

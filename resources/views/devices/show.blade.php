@@ -1,242 +1,191 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="bg-[#0a192f] text-white min-h-screen p-4 rounded-lg">
+    <div class="min-h-screen w-full px-6 py-10 text-white">
+        <div class="max-w-6xl mx-auto space-y-8">
 
-        <!-- Tombol Kembali -->
-        <div class="mb-6">
-            <a href="{{ route('dashboard') }}" class="text-blue-300 hover:text-white transition block">&larr; Kembali ke Dashboard</a>
-        </div>
+            <!-- 🔙 Back Button -->
+            <a href="{{ route('dashboard') }}" class="inline-flex items-center text-blue-600 text-sm font-semibold my-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Kembali ke Dashboard
+            </a>
 
-        <!-- Filter dan Tombol PDF -->
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
-            <div class="w-full md:w-auto">
-                <form method="GET" class="space-y-3 md:space-y-0 md:flex md:items-center gap-2 flex-wrap">
-                    <label class="block my-3 text-sm w-full md:w-auto text-white">Filter Waktu:</label>
-                    <input type="date" name="start" value="{{ request('start') }}" class="bg-white my-3 text-black p-1 rounded w-full md:w-auto">
-                    <input type="date" name="end" value="{{ request('end') }}" class="bg-white my-3 text-black p-1 rounded w-full md:w-auto">
-                    <button type="submit" class="bg-blue-500 my-3 hover:bg-blue-600 text-white px-2 py-1 rounded w-full md:w-auto">Terapkan</button>
-
-                    @if (request('start') || request('end'))
-                        <a href="{{ route('devices.show', $device->id) }}" class="text-sm text-blue-300 hover:text-white block md:inline">Reset Waktu</a>
-                    @endif
-                </form>
+            <!-- 🧾 Info Device -->
+            <div class="bg-[#112240] p-6 rounded-xl shadow-lg my-4">
+                <h1 class="text-2xl font-bold text-blue-400 mb-4">Monitoring Device: {{ $device->name }}</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <p><strong>ID:</strong> {{ $device->id }}</p>
+                    <form action="{{ route('devices.update.location', $device) }}" method="POST"
+                        class="md:col-span-2 flex items-center gap-2">
+                        @csrf
+                        @method('PATCH')
+                        <label for="location" class="block text-sm font-semibold">Lokasi:</label>
+                        <input type="text" id="location" name="location" value="{{ old('location', $device->location) }}"
+                            class="flex-1 bg-[#1e2a3a] text-white border border-blue-400 rounded px-3 py-1 text-sm focus:outline-none focus:ring focus:border-blue-300"
+                            onkeydown="if (event.key === 'Enter') this.form.submit();">
+                    </form>
+                    <p><strong>Battery:</strong> {{ $device->battery ?? '-' }}%</p>
+                    <p>
+                        <strong>SD Card:</strong>
+                        <span class="px-2 py-1 rounded {{ $sdcard_connected ? 'bg-green-600' : 'bg-red-600' }}">
+                            {{ $sdcard_connected ? 'Tersambung' : 'Tidak Tersambung' }}
+                        </span>
+                    </p>
+                    <p><strong>Versi Firmware:</strong> {{ $firmware_version }}</p>
+                    <p><strong>Update Firmware Terakhir:</strong> {{ $firmware_last_update }}</p>
+                    <p><strong>Terakhir Online:</strong>
+                        {{ $device->last_seen ? \Carbon\Carbon::parse($device->last_seen)->diffForHumans() : '-' }}</p>
+                    <p><strong>Last Debug:</strong> {{ $device->last_debug ?? '-' }}</p>
+                    <p><strong>Dibuat:</strong> {{ $device->created_at->format('d M Y H:i') }}</p>
+                    <p><strong>Diperbarui:</strong> {{ $device->updated_at->format('d M Y H:i') }}</p>
+                </div>
             </div>
 
-            <div class="flex flex-col-reverse md:flex-row gap-2 md:gap-4">
-                <a href="{{ route('devices.errorLogs', $device->id) }}"
-                   class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded text-black font-semibold text-center w-full md:w-auto">
-                    Lihat Log Error
-                </a>
+            <!-- 🔍 Filter -->
+            <form method="GET" id="filterForm" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6 my-4">
 
-                <a href="{{ route('devices.downloadPdf', $device->id) }}" target="_blank"
-                   class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white font-semibold text-center w-full md:w-auto">
-                    Download PDF
-                </a>
+                <!-- ✅ Filter Tipe Data -->
+                <div class="col-span-1 md:col-span-2 xl:col-span-3">
+                    <label class="text-sm block mb-1 text-black">Tampilkan Data:</label>
+                    <div style="scrollbar-gutter: stable;" class="w-full overflow-x-auto bg-white text-black border border-[#112240] rounded py-2 px-3">
+                        <div style="width: max-content;" class="inline-flex gap-2">
+                            @php
+    $selected = request()->input('types', ['value1']);
+    $sensorTypes = array_merge($labelMap, [
+        'suhu' => 'Suhu',
+        'kelembapan' => 'Kelembapan',
+        'baterai' => 'Baterai',
+    ]);
+                            @endphp
+                            @foreach ($sensorTypes as $key => $label)
+                                <label class="inline-flex items-center gap-2 bg-[#1e2a3a] text-black rounded cursor-pointer hover:bg-blue-500 transition whitespace-nowrap flex-shrink-0">
+                                    <input type="checkbox" name="types[]" value="{{ $key }}"
+                                        {{ in_array($key, (array) $selected) ? 'checked' : '' }}
+                                        class="form-checkbox text-blue-500 bg-[#1e2a3a]">
+                                    <span class="text-sm whitespace-nowrap inline-block">{{ $label }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ✅ Filter Tanggal Mulai -->
+                <div>
+                    <label class="text-sm block mb-1 text-black">Filter Waktu Awal:</label>
+                    <input type="date" name="start" value="{{ request('start') }}" class="w-full bg-white text-black border border-[#112240] px-3 py-2 rounded">
+                </div>
+
+                <!-- ✅ Filter Tanggal Selesai -->
+                <div>
+                    <label class="text-sm block mb-1 text-black">Filter Waktu Akhir:</label>
+                    <input type="date" name="end" value="{{ request('end') }}" class="w-full bg-white text-black border border-[#112240] px-3 py-2 rounded">
+                </div>
+
+                <!-- ✅ Tombol Filter -->
+                <div class="flex gap-2 w-full h-min">
+                    <button type="submit" class="flex-1 bg-blue-500 text-white rounded cursor-pointer">
+                        Filter
+                    </button>
+                    <a href="{{ route('devices.export.pdf', ['device' => $device->id] + request()->only('types', 'start', 'end')) }}"
+                        class="flex-1 bg-green-600 hover:bg-green-700 rounded text-white text-center px-4 py-2 flex items-center justify-center">
+                        Download (PDF)
+                    </a>
+                </div>
+
+            </form>            
+
+            <!-- 📊 Grafik Sensor -->
+            <div class="bg-[#112240] p-4 rounded-xl shadow-md my-4">
+                <h2 class="text-xl font-bold mb-4 text-blue-300">Grafik Sensor</h2>
+                <canvas id="sensorChart" class="h-max"></canvas>
             </div>
 
-        </div> 
-
-        <!-- Info Device -->
-        <div class="text-center my-6 space-y-2">
-            <h1 class="text-3xl font-bold text-blue-400 my-4 mt-8">Monitoring Device {{ $device->name }}</h1>
-            <p><strong>Lokasi:</strong> <span class="text-white">{{ $device->location }}</span></p>
-            <p><strong>Firmware Version:</strong> <span style="color: #ffffff;">{{ $device->firmware_version ?? 'N/A' }}</span></p>
-
-            @if (!empty($firmware_update_available))
-                <span class="inline-block bg-yellow-500 text-black px-3 py-1 rounded font-semibold animate-pulse">
-                    Update Firmware Tersedia (v{{ $latest_firmware_version ?? '' }})
-                </span>
-            @else
-                <span class="inline-block bg-green-600 px-3 py-1 rounded font-semibold">Firmware Terbaru</span>
-            @endif
-
-            <p class="text-sm text-gray-300">
-                <small>Update terakhir: {{ $firmware_last_update ?? 'Tidak diketahui' }}</small>
-            </p>
-
-            <!-- Status Sensor -->
-            <div class="text-center mb-4">
-                @if(($chartData['debit']->last() ?? 0) == 0 && ($chartData['suhu']->last() ?? 0) == 0 && ($chartData['baterai']->last() ?? 0) == 0)
-                    <h5><span class="inline-block bg-red-600 px-4 py-2 rounded text-white font-semibold">Sensor Offline</span></h5>
-                @else
-                    <h5><span class="inline-block bg-green-600 px-4 py-2 rounded text-white font-semibold">Sensor Aktif</span></h5>
-                @endif
+            <!-- 📋 Data Terbaru -->
+            <div class="bg-[#112240] p-4 rounded-xl text-sm my-4">
+                <h3 class="font-semibold text-blue-400 mb-2">Data Sensor Terbaru:</h3>
+                <ul class="grid grid-cols-2 md:grid-cols-3 gap-y-2">
+                    <li><strong>Debit Air:</strong> {{ $debit_air }} m³/s</li>
+                    <li><strong>Tekanan:</strong> {{ $tekanan }} bar</li>
+                    <li><strong>Suhu:</strong> {{ $suhu }} °C</li>
+                    <li><strong>Kelembapan:</strong> {{ $kelembapan }} %</li>
+                    <li><strong>Baterai:</strong> {{ $baterai }} V</li>
+                </ul>
             </div>
-            <!-- Status Voltase -->
-            <div id="voltase-box" class="text-center my-4">
-                <h5>
-                    <span id="voltase-status" class="inline-block px-4 py-2 rounded text-white font-semibold">
-                        <span id="voltase-text">Voltase: </span><span id="voltase-value">Memuat...</span> v
-                    </span>
-                </h5>
-            </div>
-            <!-- Status SD Card -->
-            <div id="sdcard-status" class="text-center my-4">
-                <!-- Akan dimuat otomatis via AJAX -->
-            </div>
-            <script>
-                function loadSDCardStatus() {
-                    fetch("{{ route('device.sdcard.status', $device->id) }}")
-                        .then(response => response.text())
-                        .then(html => {
-                            document.getElementById('sdcard-status').innerHTML = html;
-                        })
-                        .catch(error => console.error("Gagal memuat status SD Card:", error));
-                }
-                loadSDCardStatus();
-                setInterval(loadSDCardStatus, 5000);
-            </script>
-        </div>
-
-
-        <!-- Grafik Sensor -->
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            @if (!empty($chartData['debit']))
-                <x-chart-box title="Debit Air" :chartId="'debitChart'" />
-            @endif
-            @if (!empty($chartData['tekanan']))
-                <x-chart-box title="Tekanan Air" :chartId="'tekananChart'" />
-            @endif
-            @if (!empty($chartData['suhu']))
-                <x-chart-box title="Suhu" :chartId="'suhuChart'" />
-            @endif
-            @if (!empty($chartData['baterai']))
-                <x-chart-box title="Baterai" :chartId="'bateraiChart'" />
-            @endif
-            @if (!empty($chartData['kelembaban']))
-                <x-chart-box title="Kelembaban" :chartId="'kelembabanChart'" />
-            @endif
         </div>
     </div>
+@endsection
 
-    <!-- Chart.js -->
+@section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const chartOptions = {
-            responsive: true,
-            plugins: {
-                legend: { labels: { color: 'white' } },
-            },
-            scales: {
-                x: { ticks: { color: 'white' }, grid: { color: '#1a263a' } },
-                y: { ticks: { color: 'white' }, grid: { color: '#1a263a' } },
-            }
-        };
-
-        const chartData = {!! json_encode($chartData) !!};
-
-        const createChart = (id, label, data, color) => {
-            new Chart(document.getElementById(id), {
-                type: 'line',
-                data: {
-                    labels: chartData.timestamps,
-                    datasets: [{
-                        label,
-                        data,
-                        borderColor: color,
-                        backgroundColor: 'transparent',
-                        tension: 0.4
-                    }]
+        const ctx = document.getElementById('sensorChart').getContext('2d');
+        let sensorChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [] },
+            options: {
+                responsive: true,
+                animation: false,
+                scales: {
+                    x: { ticks: { color: '#fff' } },
+                    y: { ticks: { color: '#fff' } }
                 },
-                options: chartOptions
-            });
-        };
-
-        @if (!empty($chartData['debit']))
-            createChart('debitChart', 'Debit Air', chartData.debitair, '#00ffff');
-        @endif
-        @if (!empty($chartData['tekanan']))
-            createChart('tekananChart', 'Tekanan Air', chartData.tekanan, '#ffcc00');
-        @endif
-        @if (!empty($chartData['suhu']))
-            createChart('suhuChart', 'Suhu', chartData.suhu, '#66ccff');
-        @endif
-        @if (!empty($chartData['baterai']))
-            createChart('bateraiChart', 'Baterai', chartData.baterai, '#00ff00');
-        @endif
-        @if (!empty($chartData['kelembaban']))
-            new Chart(document.getElementById('kelembabanChart'), {
-                type: 'line',
-                data: {
-                    labels: chartData.timestamps,
-                    datasets: [{
-                        label: 'Kelembaban',
-                        data: chartData.kelembaban,
-                        borderColor: '#ff66cc',
-                        backgroundColor: 'transparent',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    ...chartOptions,
-                    plugins: {
-                        ...chartOptions.plugins,
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return context.dataset.label + ': ' + context.parsed.y + '%';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        ...chartOptions.scales,
-                        y: {
-                            ...chartOptions.scales.y,
-                            ticks: {
-                                ...chartOptions.scales.y.ticks,
-                                callback: function (value) {
-                                    return value + '%';
-                                },
-                                max: 100 // batas atas 100%
-                            }
-                        }
-                    }
+                plugins: {
+                    legend: { labels: { color: '#fff' } }
                 }
-            });
-        @endif
-    </script>
-    <script>
-        function loadVoltase() {
-            fetch("{{ route('device.voltase', $device->id) }}")
+            }
+        });
+
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                types: params.getAll('types[]').length ? params.getAll('types[]') : ['value1'],
+                start: params.get('start'),
+                end: params.get('end')
+            };
+        }
+
+        function updateChart() {
+            const { types, start, end } = getQueryParams();
+            const urlParams = new URLSearchParams();
+            types.forEach(t => urlParams.append('types[]', t));
+            if (start) urlParams.set('start', start);
+            if (end) urlParams.set('end', end);
+
+            fetch(`{{ url('/devices/' . $device->id . '/chart-data') }}?${urlParams.toString()}`)
                 .then(res => res.json())
                 .then(data => {
-                    const volt = parseFloat(data.voltase ?? 0);
-                    const valueSpan = document.getElementById('voltase-value');
-                    const statusSpan = document.getElementById('voltase-status');
-                    const textSpan = document.getElementById('voltase-text');
+                    sensorChart.data.labels = data.timestamps;
+                    sensorChart.data.datasets = [];
 
-                    valueSpan.innerText = volt.toFixed(2);
+                    const colorMap = {
+                        value1: 'rgba(59,130,246,1)',
+                        value2: 'rgba(96,165,250,1)',
+                        suhu: 'rgba(252,165,165,1)',
+                        kelembapan: 'rgba(134,239,172,1)',
+                        baterai: 'rgba(253,224,71,1)',
+                    };
 
-                    if (volt <= 3.0) {
-                        statusSpan.className = "inline-block bg-red-100 px-4 py-2 rounded font-semibold";
-                        valueSpan.className = "text-red-600 font-bold";
-                        textSpan.innerText = "Voltase Lemah: ";
-                        textSpan.className = "text-red-600 font-bold";
-                    } else {
-                        statusSpan.className = "inline-block bg-green-100 px-4 py-2 rounded font-semibold";
-                        valueSpan.className = "text-green-600 font-bold";
-                        textSpan.innerText = "Voltase Normal: ";
-                        textSpan.className = "text-green-600 font-bold";
-                    }
-                })
-                .catch(err => {
-                    const valueSpan = document.getElementById('voltase-value');
-                    const statusSpan = document.getElementById('voltase-status');
-                    const textSpan = document.getElementById('voltase-text');
+                    const labelMap = @json($labelMap); // ← Tambahkan ini
 
-                    valueSpan.innerText = 'Error';
-                    valueSpan.className = "text-gray-400 font-bold";
-                    textSpan.innerText = "Voltase Tidak Tersedia: ";
-                    textSpan.className = "text-gray-400 font-bold";
-                    statusSpan.className = "inline-block bg-gray-800 px-4 py-2 rounded font-semibold";
+                    Object.entries(data.datasets).forEach(([key, values]) => {
+                        sensorChart.data.datasets.push({
+                            label: labelMap[key] || key, // ← Label dinamis
+                            data: values,
+                            fill: false,
+                            borderColor: colorMap[key] || 'white',
+                            backgroundColor: colorMap[key] || 'white',
+                            tension: 0.3,
+                            pointRadius: 2
+                        });
+                    });
 
-                    console.error("Gagal memuat voltase:", err);
+                    sensorChart.update();
                 });
         }
 
-        loadVoltase();
-        setInterval(loadVoltase, 5000);
+        updateChart();
+        setInterval(updateChart, 5000);
     </script>
 @endsection

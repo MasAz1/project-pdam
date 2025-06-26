@@ -13,15 +13,18 @@ class Device extends Model
 
     protected $fillable = [
         'id',
+        'project',
         'name',
         'location',
-        'created_at'
+        'battery',
+        'sdcard',
+        'firmware',
+        'last_seen',
+        'last_debug',
     ];
-
-    // ✅ Relasi ke sensor logs
     public function sensorLogs()
     {
-        return $this->hasMany(SensorLog::class, 'device_id');
+        return $this->hasMany(SensorLog::class);
     }
 
     // ✅ Relasi ke error logs

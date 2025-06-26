@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Http\Controllers\Api;
 
@@ -6,37 +6,55 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\SensorLog;
 use App\Models\Device;
+use Carbon\Carbon;
+
 
 class SensorController extends Controller
 {
     // Simpan data dari IoT
     public function store(Request $request)
     {
-        $request->validate([
-            'device_id'    => 'required|exists:devices,id',
-            'debitair'     => 'required|numeric',
-            'tekanan'      => 'nullable|numeric',
-            'kelembaban'   => 'nullable|numeric',  
-            'suhu'         => 'nullable|numeric',
-            'baterai'      => 'nullable|numeric',
-            'sensor_name'  => 'nullable|string',
+        $deviceData = $request->input('device');
+        $sensorData = $request->input('data');
+
+        $deviceId = (int) $deviceData['id'];
+        $deviceName = $deviceData['name'];
+        $deviceProject = (int) $deviceData['project'];
+
+        // 🟢 Tambah device otomatis jika belum ada
+        $device = Device::firstOrCreate(
+            ['id' => $deviceId],
+            [
+                'name' => $deviceName,
+                'project' => $deviceProject,
+            ]
+        );
+
+        // 🕒 Konversi timestamp
+        $timestamp = isset($sensorData['timestamp'])
+            ? Carbon::parse($sensorData['timestamp'])->toDateTimeString()
+            : now()->toDateTimeString();
+
+        // 🟢 Update status terakhir ke tabel devices
+        $device->update([
+            'battery' => $sensorData['voltage_baterai'] ?? null,
+            'last_seen' => $timestamp,
         ]);
 
-        $data = SensorLog::create([
-            'device_id'   => $request->device_id,
-            'debitair'    => $request->debitair,
-            'tekanan'     => $request->tekanan,
-            'kelembaban'  => $request->kelembaban, 
-            'suhu'        => $request->suhu,
-            'baterai'     => $request->baterai,
-            'sensor_name' => $request->sensor_name,
-            'recorded_at' => now(),
+        // 🟢 Simpan data ke sensor_logs
+        SensorLog::create([
+            'device_id' => $deviceId,
+            'device_name' => $deviceName,
+            'device_project' => $deviceProject,
+            'value1' => $sensorData['value1'] ?? null,
+            'value2' => $sensorData['value2'] ?? null,
+            'kelembapan' => $sensorData['kelembapan'] ?? null,
+            'suhu' => $sensorData['suhu'] ?? null,
+            'baterai' => $sensorData['voltage_baterai'] ?? null,
+            'recorded_at' => $timestamp,
         ]);
 
-        return response()->json([
-            'message' => 'Data berhasil disimpan',
-            'data'    => $data
-        ], 201);
+        return response()->json(['message' => 'Data berhasil disimpan'], 201);
     }
 
     // Ambil semua data (maks 100 terbaru)
