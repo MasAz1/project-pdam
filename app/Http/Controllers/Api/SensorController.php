@@ -16,42 +16,39 @@ class SensorController extends Controller
     {
         $deviceData = $request->input('device');
         $sensorData = $request->input('data');
+        $timestamp  = $request->input('timestamp') ?? now();
 
         $deviceId = (int) $deviceData['id'];
-        $deviceName = $deviceData['name'];
-        $deviceProject = (int) $deviceData['project'];
 
-        // 🟢 Tambah device otomatis jika belum ada
-        $device = Device::firstOrCreate(
+        // ✅ Buat atau update device (termasuk last_debug)
+        $device = Device::updateOrCreate(
             ['id' => $deviceId],
             [
-                'name' => $deviceName,
-                'project' => $deviceProject,
+                'name'        => $deviceData['name'],
+                'project'     => $deviceData['project'],
+                'firmware'    => $deviceData['firmware'] ?? null,
+                'battery'     => $deviceData['battery'] ?? null,
+                'sdcard'      => $deviceData['sdcard'] ?? null,
+                'last_seen'   => Carbon::parse($timestamp),
+                'last_debug'  => $deviceData['last_debug'] ?? null,
+                'last_debug_info' => $deviceData['last_debug_info'] ?? null,
             ]
         );
 
-        // 🕒 Konversi timestamp
-        $timestamp = isset($sensorData['timestamp'])
-            ? Carbon::parse($sensorData['timestamp'])->toDateTimeString()
-            : now()->toDateTimeString();
+        // ✅ Update waktu firmware jika berubah
+        if ($device->wasChanged('firmware')) {
+            $device->firmware_updated_at = now();
+            $device->save();
+        }
 
-        // 🟢 Update status terakhir ke tabel devices
-        $device->update([
-            'battery' => $sensorData['voltage_baterai'] ?? null,
-            'last_seen' => $timestamp,
-        ]);
-
-        // 🟢 Simpan data ke sensor_logs
+        // ✅ Simpan log sensor
         SensorLog::create([
-            'device_id' => $deviceId,
-            'device_name' => $deviceName,
-            'device_project' => $deviceProject,
-            'value1' => $sensorData['value1'] ?? null,
-            'value2' => $sensorData['value2'] ?? null,
-            'kelembapan' => $sensorData['kelembapan'] ?? null,
-            'suhu' => $sensorData['suhu'] ?? null,
-            'baterai' => $sensorData['voltage_baterai'] ?? null,
-            'recorded_at' => $timestamp,
+            'device_id'   => $deviceId,
+            'value1'      => $sensorData['value1'] ?? null,
+            'value2'      => $sensorData['value2'] ?? null,
+            'kelembapan'  => $sensorData['kelembapan'] ?? null,
+            'suhu'        => $sensorData['suhu'] ?? null,
+            'recorded_at' => Carbon::parse($timestamp),
         ]);
 
         return response()->json(['message' => 'Data berhasil disimpan'], 201);

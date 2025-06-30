@@ -14,18 +14,15 @@ class CreateSensorLogsTable extends Migration
         Schema::create('sensor_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('device_id');
-            $table->integer('device_project');
-            $table->string('device_name');
             $table->float('value1')->nullable();
             $table->float('value2')->nullable();
             $table->float('kelembapan')->nullable();
             $table->float('suhu')->nullable();
-            $table->float('baterai')->nullable();
             $table->string('recorded_at')->nullable();
             $table->timestamps();
 
             // Foreign Key
-            $table->foreign('device_id')->references('id')->on('devices')->onDelete('cascade');
+            $table->foreign('device_id')->references('id')->on('devices')->onDelete('cascade')->onUpdate('cascade');
         });
     }
 

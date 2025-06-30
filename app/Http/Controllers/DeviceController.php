@@ -71,6 +71,7 @@ class DeviceController extends Controller
     {
         $query = $device->sensorLogs()->latest();
 
+        // 🔍 Filter berdasarkan tanggal (jika ada)
         if ($request->filled('start')) {
             $query->whereDate('recorded_at', '>=', $request->input('start'));
         }
@@ -79,7 +80,7 @@ class DeviceController extends Controller
             $query->whereDate('recorded_at', '<=', $request->input('end'));
         }
 
-        $logs = $query->limit(50)->get()->reverse();
+        $logs = $query->limit(50)->get()->reverse(); // ambil 50 data terbaru, urut naik
 
         $latestLog = $device->sensorLogs()->latest()->first();
 
@@ -87,48 +88,47 @@ class DeviceController extends Controller
         $type = $request->input('type', 'value1');
         $chartValues = $logs->pluck($type);
 
-        // 🏷 Ambil label sensor sesuai project
+        // 🏷 Label sensor sesuai project
         $labelMap = $this->getSensorLabels($device->project);
 
-        // 🏷 Ambil label grafik dari labelMap, atau fallback
         $chartLabel = $labelMap[$type] ?? ucfirst($type);
 
         return view('devices.show', [
             'device' => $device,
 
             'chartData' => [
-                'timestamps' => $logs->pluck('recorded_at')->map(fn($d) => Carbon::parse($d)->format('d-m-Y H:i')),
+                'timestamps'   => $logs->pluck('recorded_at')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d-m-Y H:i')),
                 'value1'       => $logs->pluck('value1'),
                 'value2'       => $logs->pluck('value2'),
                 'kelembapan'   => $logs->pluck('kelembapan'),
                 'suhu'         => $logs->pluck('suhu'),
-                'baterai'      => $logs->pluck('baterai'),
             ],
 
-            // Info tambahan
+            // ℹ️ Info firmware
             'firmware_version' => $device->firmware ?? 'Tidak tersedia',
             'firmware_last_update' => $device->firmware_updated_at
-                ? Carbon::parse($device->firmware_updated_at)->diffForHumans()
+                ? \Carbon\Carbon::parse($device->firmware_updated_at)->diffForHumans()
                 : 'Tidak tersedia',
             'latest_firmware_version' => '1.0.5',
             'firmware_update_available' => isset($device->firmware)
                 && version_compare($device->firmware, '1.0.5', '<'),
 
-            // Data sensor terakhir
+            // 📈 Data sensor terbaru
             'debit_air'   => $latestLog->value1 ?? 0,
             'tekanan'     => $latestLog->value2 ?? 0,
             'suhu'        => $latestLog->suhu ?? 0,
-            'baterai'     => $latestLog->baterai ?? 0,
+            'baterai'     => $device->battery ?? 0, // dari tabel devices, bukan logs
             'kelembapan'  => $latestLog->kelembapan ?? 0,
 
-            'sdcard_connected' => $device->sdcard === 'connected',
+            // ⚙️ Status SD Card
+            'sdcard_connected' => $device->sdcard == '1' || $device->sdcard === 1,
 
-            // 🔁 Untuk grafik dinamis
+            // Grafik
             'chartType' => $type,
             'chartLabel' => $chartLabel,
             'chartValues' => $chartValues,
 
-            // 🏷 Untuk dynamic label di Blade
+            // Label dinamis
             'labelMap' => $labelMap,
         ]);
     }
@@ -165,7 +165,6 @@ class DeviceController extends Controller
             'sensorLabels' => $this->getSensorLabels($device->project),
         ])->download("grafik-device-{$device->id}.pdf");
     }
-
     public function chartData(Device $device, Request $request)
     {
         $types = $request->input('types', ['value1']); // default 1 jenis
@@ -194,6 +193,7 @@ class DeviceController extends Controller
 
         foreach ($types as $type) {
             $response['datasets'][$type] = $logs->pluck($type);
+            $response['firmware'] = $device->firmware;
         }
 
         return response()->json($response);

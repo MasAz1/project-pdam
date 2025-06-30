@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\SensorLog;
-use App\Models\DeviceErrorLog;
 
 class Device extends Model
 {
@@ -19,8 +18,10 @@ class Device extends Model
         'battery',
         'sdcard',
         'firmware',
+        'firmware_updated_at',
         'last_seen',
         'last_debug',
+        'last_debug_info',
     ];
     public function sensorLogs()
     {

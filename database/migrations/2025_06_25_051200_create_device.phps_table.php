@@ -19,8 +19,10 @@ return new class extends Migration
             $table->integer('battery')->nullable();
             $table->string('sdcard')->nullable();
             $table->string('firmware')->nullable();
+            $table->string('firmware_updated_at')->nullable();
             $table->timestamp('last_seen')->nullable();
             $table->string('last_debug')->nullable();
+            $table->string('last_debug_info')->nullable();
             $table->timestamps();
         });
     }
