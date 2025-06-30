@@ -9,7 +9,6 @@
                 <h1 class="text-3xl font-bold text-blue-600 text-center md:text-left w-full md:w-auto">
                     Monitoring Air
                 </h1>
-
                 <div class="flex flex-col md:flex-row items-center gap-3">
                     {{-- <a href="{{ route('devices.create') }}"
                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow transition duration-200">
