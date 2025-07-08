@@ -14,6 +14,7 @@ class SensorLog extends Model
         'device_id',
         'value1',
         'value2',
+        'volume',
         'kelembapan',
         'suhu',
         'recorded_at'

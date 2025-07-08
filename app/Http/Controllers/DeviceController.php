@@ -60,7 +60,7 @@ class DeviceController extends Controller
     private function getSensorLabels($project)
     {
         return match ((int) $project) {
-            1 => ['value1' => 'Debit Air', 'value2' => 'Tekanan Air'],
+            1 => ['value1' => 'Debit Air', 'value2' => 'Tekanan Air', 'volume' => 'Volume Air'],
             2 => ['value1' => 'Curah Hujan', 'value2' => 'Ketinggian Air'],
             default => ['value1' => 'Value 1', 'value2' => 'Value 2'],
         };
@@ -80,7 +80,7 @@ class DeviceController extends Controller
             $query->whereDate('recorded_at', '<=', $request->input('end'));
         }
 
-        $logs = $query->limit(50)->get()->reverse(); // ambil 50 data terbaru, urut naik
+        $logs = $query->get();
 
         $latestLog = $device->sensorLogs()->latest()->first();
 
@@ -93,7 +93,7 @@ class DeviceController extends Controller
 
         $chartLabel = $labelMap[$type] ?? ucfirst($type);
 
-        return view('devices.show', [
+        $data = [
             'device' => $device,
 
             'chartData' => [
@@ -107,17 +107,16 @@ class DeviceController extends Controller
             // ℹ️ Info firmware
             'firmware_version' => $device->firmware ?? 'Tidak tersedia',
             'firmware_last_update' => $device->firmware_updated_at
-                ? \Carbon\Carbon::parse($device->firmware_updated_at)->diffForHumans()
+                ? $device->firmware_updated_at
                 : 'Tidak tersedia',
             'latest_firmware_version' => '1.0.5',
             'firmware_update_available' => isset($device->firmware)
                 && version_compare($device->firmware, '1.0.5', '<'),
 
             // 📈 Data sensor terbaru
-            'debit_air'   => $latestLog->value1 ?? 0,
-            'tekanan'     => $latestLog->value2 ?? 0,
+            'value1'   => $latestLog->value1 ?? 0,
+            'value2'     => $latestLog->value2 ?? 0,
             'suhu'        => $latestLog->suhu ?? 0,
-            'baterai'     => $device->battery ?? 0, // dari tabel devices, bukan logs
             'kelembapan'  => $latestLog->kelembapan ?? 0,
 
             // ⚙️ Status SD Card
@@ -130,7 +129,14 @@ class DeviceController extends Controller
 
             // Label dinamis
             'labelMap' => $labelMap,
-        ]);
+        ];
+
+        if ($device->project == 1) {
+            $data['chartData']['volume'] = $logs->pluck('volume');
+            $data['volume'] = $latestLog->volume ?? 0;
+        }
+
+        return view('devices.show', $data);
     }
 
     // Download PDF log
@@ -167,34 +173,62 @@ class DeviceController extends Controller
     }
     public function chartData(Device $device, Request $request)
     {
-        $types = $request->input('types', ['value1']); // default 1 jenis
+        $types = $request->input('types', ['value1']);
         if (!is_array($types)) {
             $types = explode(',', $types);
         }
 
+        $query = $device->sensorLogs()->orderBy('recorded_at');
+
         $start = $request->input('start');
         $end = $request->input('end');
 
-        $query = $device->sensorLogs()->orderBy('recorded_at');
-
         if ($start) {
-            $query->where('recorded_at', '>=', Carbon::parse($start)->startOfDay());
+            $query->where('recorded_at', '>=', Carbon::parse($start));
         }
 
         if ($end) {
-            $query->where('recorded_at', '<=', Carbon::parse($end)->endOfDay());
+            $query->where('recorded_at', '<=', Carbon::parse($end));
         }
+
 
         $logs = $query->get();
 
         $response = [
             'timestamps' => $logs->pluck('recorded_at')->map(fn($d) => Carbon::parse($d)->format('d-m-Y H:i')),
+            'datasets' => [],
         ];
 
         foreach ($types as $type) {
             $response['datasets'][$type] = $logs->pluck($type);
-            $response['firmware'] = $device->firmware;
         }
+
+        $latestLog = $device->sensorLogs()->latest('recorded_at')->first();
+
+        $latest = [
+            'value1' => $latestLog->value1 ?? 0,
+            'value2' => $latestLog->value2 ?? 0,
+            'suhu' => $latestLog->suhu ?? 0,
+            'kelembapan' => $latestLog->kelembapan ?? 0,
+        ];
+
+        if ($device->project == 1) {
+            $latest['volume'] = $latestLog->volume ?? 0;
+        }
+
+        $response['latest'] = $latest;
+
+        $response['device'] = [
+            'firmware' => $device->firmware ?? 'Tidak tersedia',
+            'firmware_updated_at' => $device->firmware_updated_at
+                ? Carbon::parse($device->firmware_updated_at)->diffForHumans()
+                : 'Tidak tersedia',
+            'battery' => $device->battery ?? 0,
+            'sdcard' => $device->sdcard == '1' || $device->sdcard === 1,
+            'last_seen' => $device->last_seen
+                ? $device->last_seen
+                : 'Tidak tersedia',
+        ];
 
         return response()->json($response);
     }
@@ -217,7 +251,6 @@ class DeviceController extends Controller
     }
 
 
-    // ✅ Endpoint status SD card untuk AJAX
     public function sdcardStatus($id)
     {
         $device = Device::findOrFail($id);
@@ -229,7 +262,6 @@ class DeviceController extends Controller
         return view('partials.sdcard_status', compact('sdcard_connected', 'sdcard_used', 'sdcard_total'));
     }
 
-    // ✅ Endpoint ambil voltase terbaru untuk JS
     public function getVoltase($id)
     {
         $voltase = SensorLog::where('device_id', $id)

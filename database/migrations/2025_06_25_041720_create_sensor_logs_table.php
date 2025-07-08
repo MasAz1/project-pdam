@@ -16,6 +16,7 @@ class CreateSensorLogsTable extends Migration
             $table->unsignedBigInteger('device_id');
             $table->float('value1')->nullable();
             $table->float('value2')->nullable();
+            $table->float('volume')->nullable();
             $table->float('kelembapan')->nullable();
             $table->float('suhu')->nullable();
             $table->string('recorded_at')->nullable();
