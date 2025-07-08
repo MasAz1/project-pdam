@@ -238,6 +238,10 @@ $sensorTypes = array_merge($labelMap, [
             fetch(`{{ url('/devices/' . $device->id . '/chart-data') }}?${urlParams.toString()}`)
                 .then(res => res.json())
                 .then(data => {
+                    if (!data || !data.timestamps || !data.datasets || !data.device) {
+                        console.error('Invalid data format:', data);
+                        return;
+                    }
                     sensorChart.data.labels = data.timestamps;
                     sensorChart.data.datasets = [];
 
@@ -266,40 +270,47 @@ $sensorTypes = array_merge($labelMap, [
                     sensorChart.update();
 
                     if (data.latest) {
-                        document.getElementById('latestDebit').textContent = (data.device.project == 1 ? ' L/h' : (data.device.project == 2 ? (data.latest.value1 == 0) ? 'Basah' : 'Kering' : ''));
-                        document.getElementById('latestTekanan').textContent = data.latest.value2 + (data.device.project == 1 ? ' bar' : (data.device.project == 2 ? ' cm' : ''));
-                        document.getElementById('latestVolume').textContent = data.latest.volume + (data.device.project == 1 ? ' L' : (data.device.project == 2 ? ' l' : ''));
-                        document.getElementById('latestSuhu').textContent = data.latest.suhu + ' °C';
-                        document.getElementById('latestKelembapan').textContent = data.latest.kelembapan + ' %';
+                        const debitEl = document.getElementById('latestDebit');
+                        if (debitEl) {
+                            debitEl.textContent = (data.device.project == 1 ? ' L/h' : (data.device.project == 2 ? (data.latest.value1 == 0) ? 'Basah' : 'Kering' : ''));
+                        }
+
+                        const tekananEl = document.getElementById('latestTekanan');
+                        if (tekananEl) {
+                            tekananEl.textContent = data.latest.value2 + (data.device.project == 1 ? ' bar' : (data.device.project == 2 ? ' cm' : ''));
+                        }
+
+                        const volumeEl = document.getElementById('latestVolume');
+                        if (volumeEl) {
+                            volumeEl.textContent = data.latest.volume + (data.device.project == 1 ? ' L' : (data.device.project == 2 ? ' l' : ''));
+                        }
+
+                        const suhuEl = document.getElementById('latestSuhu');
+                        if (suhuEl) {
+                            suhuEl.textContent = data.latest.suhu + ' °C';
+                        }
+
+                        const kelembapanEl = document.getElementById('latestKelembapan');
+                        if (kelembapanEl) {
+                            kelembapanEl.textContent = data.latest.kelembapan + ' %';
+                        }
                     }
 
                     const lastSeenEl = document.getElementById('lastSeen');
-                    if (data.device.last_seen) {
-                        const formatted = new Date(data.device.last_seen).toLocaleString('id-ID', {
-                            timeZone: 'Asia/Jakarta',
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
-                        }).replace(',', '');
-                        lastSeenEl.textContent = formatted;
-                    } else {
-                        lastSeenEl.textContent = 'Tidak tersedia';
+                    if (lastSeenEl) {
+                        lastSeenEl.textContent = data.device.last_seen;
                     }
 
-                    document.getElementById('batteryStatus').textContent = data.device.battery + '%';
+                    const batteryEl = document.getElementById('batteryStatus');
+                    if (batteryEl) {
+                        batteryEl.textContent = data.device.battery + '%';
+                    }
 
                     const sdcardEl = document.getElementById('sdcardStatus');
-                    if (data.device.sdcard) {
-                        sdcardEl.textContent = 'Tersambung';
-                        sdcardEl.classList.remove('bg-red-600');
-                        sdcardEl.classList.add('bg-green-600');
-                    } else {
-                        sdcardEl.textContent = 'Tidak Tersambung';
-                        sdcardEl.classList.remove('bg-green-600');
-                        sdcardEl.classList.add('bg-red-600');
+                    if (sdcardEl) {
+                        sdcardEl.textContent = data.device.sdcard ? 'Tersambung' : 'Tidak Tersambung';
+                        sdcardEl.classList.toggle('bg-green-600', data.device.sdcard);
+                        sdcardEl.classList.toggle('bg-red-600', !data.device.sdcard);
                     }
 
                     if (data.device.firmware && data.device.firmware !== currentFirmware) {

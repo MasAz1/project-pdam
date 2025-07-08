@@ -197,6 +197,8 @@ class DeviceController extends Controller
         $response = [
             'timestamps' => $logs->pluck('recorded_at')->map(fn($d) => Carbon::parse($d)->format('d-m-Y H:i')),
             'datasets' => [],
+            'dev' => [],
+            'last' => [],
         ];
 
         foreach ($types as $type) {
@@ -219,15 +221,14 @@ class DeviceController extends Controller
         $response['latest'] = $latest;
 
         $response['device'] = [
+            'project' => $device->project,
             'firmware' => $device->firmware ?? 'Tidak tersedia',
             'firmware_updated_at' => $device->firmware_updated_at
                 ? Carbon::parse($device->firmware_updated_at)->diffForHumans()
                 : 'Tidak tersedia',
             'battery' => $device->battery ?? 0,
             'sdcard' => $device->sdcard == '1' || $device->sdcard === 1,
-            'last_seen' => $device->last_seen
-                ? $device->last_seen
-                : 'Tidak tersedia',
+            'last_seen' => $device->last_seen,
         ];
 
         return response()->json($response);
