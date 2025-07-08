@@ -14,16 +14,9 @@ class DashboardController extends Controller
 		$onlineDevices = Device::where('status', 'online')->count();
 		$offlineDevices = Device::where('status', 'offline')->count();
 
-		$firmwareVersions = Firmware::count();
-		$latestFirmware = Firmware::latest()->first();
 		$pendingUpdates = Device::whereNotNull('target_firmware_version')
 			->whereColumn('current_firmware_version', '!=', 'target_firmware_version')
 			->count();
-
-		$recentActivities = DeviceUpdateHistory::with(['device', 'firmware'])
-			->latest()
-			->take(10)
-			->get();
 
 		return view('dashboard', compact(
 			'totalDevices',

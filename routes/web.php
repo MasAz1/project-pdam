@@ -7,6 +7,13 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\FirmwareController;
 
+// firmware Routes
+Route::get('/devices/{device}/firmware/update', [FirmwareController::class, 'showUpdateForm'])->name('firmware.update.form');
+Route::post('/firmware/upload/{deviceId}', [FirmwareController::class, 'upload'])->name('firmware.upload');
+
+
+
+
 // Login Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
@@ -37,6 +44,6 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/devices/{device}/export/pdf', [DeviceController::class, 'exportPdf'])->name('devices.export.pdf');
 	Route::get('/devices/{device}/chart-data', [DeviceController::class, 'chartData']);
 	Route::patch('/devices/{device}/update-location', [DeviceController::class, 'updateLocation'])->name('devices.update.location');
-	// Firmware - Tambahkan ini di dalam middleware auth
-	Route::get('/firmware/download/{firmware}', [FirmwareController::class, 'download'])->name('firmware.download');
+	Route::get('/devices/{id}', [DeviceController::class, 'show'])->name('devices.show');
 });
+

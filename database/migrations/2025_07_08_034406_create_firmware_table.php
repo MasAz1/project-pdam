@@ -13,12 +13,8 @@ return new class extends Migration
     {
         Schema::create('firmwares', function (Blueprint $table) {
             $table->id();
-            $table->string('version')->unique(); // v2.4.1
-            $table->string('name');
-            $table->string('model'); // Model yang didukung
-            $table->text('release_notes')->nullable();
+            $table->string('version');
             $table->string('file_path');
-            $table->unsignedInteger('file_size');
             $table->timestamps();
         });
     }
@@ -28,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('firmware');
     }
 };

@@ -1,194 +1,79 @@
 @extends('layouts.app')
 
-@section('title', 'Firmware Update')
-@section('header', 'Firmware Update')
-
 @section('content')
-	<!-- Update Form -->
-	<div class="bg-white rounded-lg shadow p-6 mb-6">
-		<h3 class="text-lg font-semibold text-green-600 mb-4">Update Devices</h3>
-		<form>
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-				<div>
-					<label for="device_group" class="block text-sm font-medium text-gray-700 mb-1">Device Group</label>
-					<select id="device_group"
-						class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
-						<option value="">All Devices</option>
-						<option value="group1">Office Devices</option>
-						<option value="group2">Warehouse Devices</option>
-						<option value="group3">Retail Devices</option>
-					</select>
+	@php
+	$bgColorProject = match ($device->project) {
+		1 => '#0d3b66',
+		2 => '#14532d',
+		default => '#112240'
+	};
+	@endphp
+			<div style="background-color: {{ $bgColorProject }}" class="max-w-5xl bg-[#7657765] mx-auto p-6 text-white rounded-xl shadow-xl">
+
+				<!-- Header dan Tombol Kembali -->
+				<div class="flex justify-between items-center mb-6">
+					<a href="{{ route('devices.show', ['id' => $device->id]) }}"
+						class="inline-flex items-center text-blue-300 hover:text-blue-200 text-sm font-semibold">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24"
+							stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+						</svg>
+						Kembali ke Dashboard
+					</a>
+
+					<h2 class="text-2xl font-bold text-blue-400">Update Firmware: {{ $device->name }}</h2>
 				</div>
 
-				<div>
-					<label for="device_model" class="block text-sm font-medium text-gray-700 mb-1">Device Model</label>
-					<select id="device_model"
-						class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
-						<option value="">All Models</option>
-						<option value="model-a">Model A</option>
-						<option value="model-b">Model B</option>
-						<option value="model-c">Model C</option>
-					</select>
+				<!-- Alert Success -->
+				@if(session('success'))
+					<div class="bg-green-600 px-4 py-2 rounded mb-6 shadow text-white">
+						{{ session('success') }}
+					</div>
+				@endif
+
+				<!-- Form Upload Firmware -->
+				<form action="{{ route('firmware.upload', $device->id) }}" method="POST" enctype="multipart/form-data"
+					class="bg-blue-950 rounded-lg p-6 shadow space-y-5 mb-10 border border-blue-700">
+					@csrf
+
+					<div>
+						<label class="block font-semibold mb-1 text-blue-100">Versi Firmware</label>
+						<input type="text" name="version" placeholder="v1.0.0"
+							class="w-full px-4 py-2 rounded bg-blue-900 border border-blue-400 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+							required />
+					</div>
+
+					<div>
+						<label class="block font-semibold mb-1 text-blue-100">File Firmware (.bin)</label>
+						<input type="file" name="file" accept=".bin"
+							class="w-full px-4 py-2 rounded bg-blue-900 border border-blue-400 text-white file:bg-blue-600 file:text-white file:border-none file:px-4 file:py-2 file:rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300"
+							required />
+					</div>
+
+					<button type="submit"
+						class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow transition-all">
+						🚀 Upload Firmware
+					</button>
+				</form>
+
+				<!-- Daftar Firmware -->
+				<h3 class="text-xl font-semibold mb-4 text-blue-300">Daftar Firmware Tersedia</h3>
+
+				<div class="space-y-3">
+					@forelse($firmwares as $fw)
+						<div class="flex justify-between items-center bg-blue-900 border border-blue-600 rounded-lg px-4 py-3 shadow">
+							<div>
+								<p><strong class="text-white">Versi:</strong> {{ $fw->version }}</p>
+								<p class="text-sm text-blue-200">Dibuat: {{ $fw->created_at->format('d M Y H:i') }}</p>
+							</div>
+							<a href="{{ Storage::url($fw->file_path) }}" target="_blank"
+								class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium shadow">
+								Download
+							</a>
+						</div>
+					@empty
+						<p class="text-blue-300">Belum ada firmware yang diunggah.</p>
+					@endforelse
 				</div>
-
-				<div>
-					<label for="firmware_version" class="block text-sm font-medium text-gray-700 mb-1">Firmware
-						Version</label>
-					<select id="firmware_version"
-						class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
-						<option value="">Select firmware version</option>
-						<option value="2.4.1">v2.4.1 (Latest)</option>
-						<option value="2.3.5">v2.3.5</option>
-						<option value="2.2.0">v2.2.0</option>
-					</select>
-				</div>
 			</div>
-
-			<div class="mb-4">
-				<label class="inline-flex items-center">
-					<input type="checkbox"
-						class="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-300 focus:ring focus:ring-green-200 focus:ring-opacity-50">
-					<span class="ml-2">Schedule Update</span>
-				</label>
-			</div>
-
-			<div class="flex space-x-3">
-				<button type="submit"
-					class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-					Start Update
-				</button>
-				<button type="reset"
-					class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-					Reset
-				</button>
-			</div>
-		</form>
-	</div>
-
-	<!-- Update Progress -->
-	<div class="bg-white rounded-lg shadow p-6 mb-6">
-		<h3 class="text-lg font-semibold text-green-600 mb-2">Update Progress</h3>
-		<div class="w-full bg-gray-200 rounded-full h-4 mb-2">
-			<div id="update-progress"
-				class="bg-green-600 h-4 rounded-full text-xs text-white flex items-center justify-center" style="width: 0%">
-				0%</div>
-		</div>
-		<div class="text-right text-sm text-gray-500">Updated 24 of 142 devices</div>
-	</div>
-
-	<!-- Device List -->
-	<div class="bg-white rounded-lg shadow overflow-hidden">
-		<div class="p-4 border-b border-gray-200 flex justify-between items-center">
-			<h3 class="text-lg font-semibold text-green-600">Device List</h3>
-			<div class="flex space-x-2">
-				<input type="text" placeholder="Search devices..."
-					class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
-				<select
-					class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
-					<option>All Status</option>
-					<option>Pending</option>
-					<option>Success</option>
-					<option>Failed</option>
-				</select>
-			</div>
-		</div>
-		<div class="overflow-x-auto">
-			<table class="min-w-full divide-y divide-gray-200">
-				<thead class="bg-gray-50">
-					<tr>
-						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device ID
-						</th>
-						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model
-						</th>
-						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current
-							Version</th>
-						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target
-							Version</th>
-						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status
-						</th>
-						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last
-							Check</th>
-						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions
-						</th>
-					</tr>
-				</thead>
-				<tbody class="bg-white divide-y divide-gray-200">
-					<tr>
-						<td class="px-6 py-4 whitespace-nowrap">DEV-001245</td>
-						<td class="px-6 py-4 whitespace-nowrap">Model A</td>
-						<td class="px-6 py-4 whitespace-nowrap">2.3.5</td>
-						<td class="px-6 py-4 whitespace-nowrap">2.4.1</td>
-						<td class="px-6 py-4 whitespace-nowrap">
-							<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Success</span>
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap">2023-06-15 14:30</td>
-						<td class="px-6 py-4 whitespace-nowrap">
-							<button class="text-green-600 hover:text-green-900 mr-2">Details</button>
-						</td>
-					</tr>
-					<tr>
-						<td class="px-6 py-4 whitespace-nowrap">DEV-001893</td>
-						<td class="px-6 py-4 whitespace-nowrap">Model B</td>
-						<td class="px-6 py-4 whitespace-nowrap">2.2.0</td>
-						<td class="px-6 py-4 whitespace-nowrap">2.4.1</td>
-						<td class="px-6 py-4 whitespace-nowrap">
-							<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Success</span>
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap">2023-06-15 13:45</td>
-						<td class="px-6 py-4 whitespace-nowrap">
-							<button class="text-green-600 hover:text-green-900 mr-2">Details</button>
-						</td>
-					</tr>
-					<tr>
-						<td class="px-6 py-4 whitespace-nowrap">DEV-003421</td>
-						<td class="px-6 py-4 whitespace-nowrap">Model A</td>
-						<td class="px-6 py-4 whitespace-nowrap">2.3.5</td>
-						<td class="px-6 py-4 whitespace-nowrap">2.4.1</td>
-						<td class="px-6 py-4 whitespace-nowrap">
-							<span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Failed</span>
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap">2023-06-15 12:20</td>
-						<td class="px-6 py-4 whitespace-nowrap">
-							<button class="text-green-600 hover:text-green-900 mr-2">Details</button>
-							<button class="text-blue-600 hover:text-blue-900">Retry</button>
-						</td>
-					</tr>
-					<tr>
-						<td class="px-6 py-4 whitespace-nowrap">DEV-002567</td>
-						<td class="px-6 py-4 whitespace-nowrap">Model C</td>
-						<td class="px-6 py-4 whitespace-nowrap">2.1.0</td>
-						<td class="px-6 py-4 whitespace-nowrap">2.4.1</td>
-						<td class="px-6 py-4 whitespace-nowrap">
-							<span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap">2023-06-15 11:05</td>
-						<td class="px-6 py-4 whitespace-nowrap">
-							<button class="text-green-600 hover:text-green-900 mr-2">Details</button>
-							<button class="text-blue-600 hover:text-blue-900">Retry</button>
-						</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</div>
-
-	@section('scripts')
-		<script>
-			document.addEventListener('DOMContentLoaded', function () {
-				// Simulate progress update
-				let progress = 0;
-				const progressBar = document.getElementById('update-progress');
-
-				const progressInterval = setInterval(() => {
-					progress += 5;
-					if (progress > 65) {
-						progress = 65;
-						clearInterval(progressInterval);
-					}
-					progressBar.style.width = `${progress}%`;
-					progressBar.textContent = `${progress}%`;
-				}, 500);
-			});
-		</script>
-	@endsection
 @endsection
