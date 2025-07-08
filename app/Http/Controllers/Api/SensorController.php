@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\SensorLog;
 use App\Models\Device;
 use Carbon\Carbon;
+use App\Models\Firmware;
 
 class SensorController extends Controller
 {
@@ -51,7 +52,14 @@ class SensorController extends Controller
             'recorded_at' => Carbon::parse($timestamp),
         ]);
 
-        return response()->json(['message' => 'Data berhasil disimpan'], 201);
+        $firmwares = Firmware::where('file_path', 'like', "%{$deviceData['name']}{$deviceData['project']}%")->get();
+
+        // Urutkan berdasarkan semver (versi numerik)
+        $latestVersion = $firmwares->sortByDesc(function ($fw) {
+            return array_map('intval', explode('.', ltrim($fw->version, 'v')));
+        })->pluck('version')->first();
+
+        return $latestVersion;
     }
 
     // Ambil semua data log

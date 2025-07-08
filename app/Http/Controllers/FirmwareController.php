@@ -12,7 +12,7 @@ class FirmwareController extends Controller
     public function showUpdateForm($deviceId)
     {
         $device = Device::findOrFail($deviceId);
-        $firmwares = Firmware::where('file_path', 'like', "%$device->name$device->project%")
+        $firmwares = Firmware::where('file_path', 'like', "%{$device->name}{$device->project}%")
             ->orderBy('created_at', 'desc')
             ->get();
         return view('firmware.update', compact('device', 'firmwares'));
