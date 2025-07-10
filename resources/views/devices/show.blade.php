@@ -63,7 +63,7 @@
                                                                     <p>
                                                                         <strong>Last Debug:</strong>
                                                                         @if($device->last_debug)
-                                                                            <button onclick="showLastDebug()" class="text-blue-400 hover:underline">
+                                                                            <button id="lastDebug" onclick="showLastDebug()" class="text-blue-400 hover:underline">
                                                                                 {{ $device->last_debug }}
                                                                             </button>
                                                                         @else
@@ -210,7 +210,7 @@
         function showLastDebug() {
             Swal.fire({
                 title: 'Last Debug Info',
-                html: `<pre style="text-align:left;white-space:pre-wrap;">{{ addslashes($device->last_debug_info ?? 'Tidak ada info detail') }}</pre>`,
+                html: `<pre id="lastDebugInfo" style="text-align:left;white-space:pre-wrap;">Meload...</pre>`,
                 icon: 'info',
                 confirmButtonText: 'Tutup',
                 width: '80%',
@@ -294,6 +294,16 @@
                         }
                     }
 
+                    const lastDebugEl = document.getElementById('lastDebug');
+                    if (lastDebugEl) {
+                        lastDebugEl.textContent = data.device.last_debug || 'Tidak ada info debug';
+                    }
+
+                    const lastDebugInfoEl = document.getElementById('lastDebugInfo');
+                    if (lastDebugInfoEl) {
+                        lastDebugInfoEl.textContent = data.device.last_debug_info || 'Tidak ada info detail';
+                    }
+
                     const lastSeenEl = document.getElementById('lastSeen');
                     if (lastSeenEl) {
                         lastSeenEl.textContent = data.device.last_seen;
@@ -322,7 +332,7 @@
         }
 
         updateChart();
-        setInterval(updateChart, 5000);
+        setInterval(updateChart, 1000);
     </script>
 @endsection
 

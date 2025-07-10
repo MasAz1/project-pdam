@@ -228,6 +228,8 @@ class DeviceController extends Controller
                 : 'Tidak tersedia',
             'battery' => $device->battery ?? 0,
             'sdcard' => $device->sdcard == '1' || $device->sdcard === 1,
+            'last_debug' => $device->last_debug ?? 'Tidak ada info debug',
+            'last_debug_info' => $device->last_debug_info ?? 'Tidak ada info detail',
             'last_seen' => $device->last_seen,
         ];
 
